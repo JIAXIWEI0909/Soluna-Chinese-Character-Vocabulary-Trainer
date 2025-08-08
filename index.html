@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Soluna Chinese Character Vocabulary Trainer — Web Version (HSK 1-3 Verbs)</title>
+<style>
+  body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; margin: 20px; max-width: 700px; }
+  h1 { color: #333; }
+  .question { margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+  .choices { margin-top: 8px; }
+  label { display: block; margin: 5px 0; cursor: pointer; }
+  .correct { color: green; font-weight: bold; }
+  .wrong { color: red; font-weight: bold; }
+  #score { margin-top: 20px; font-size: 1.2em; }
+  button { padding: 10px 15px; font-size: 1em; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Soluna Chinese Character Vocabulary Trainer — Web Version (HSK 1-3 Verbs)</h1>
+
+<div>
+  <label>
+    <input type="radio" name="mode" value="meaning" checked />
+    Character → Meaning
+  </label>
+  <label>
+    <input type="radio" name="mode" value="pinyin" />
+    Character → Pinyin
+  </label>
+</div>
+
+<div style="margin-top:10px;">
+  <label for="numQ">Number of Questions per Group:</label>
+  <input type="number" id="numQ" min="1" max="100" value="5" style="width:60px;" />
+</div>
+
+<button id="startBtn" style="margin-top:10px;">Start Practice</button>
+
+<div id="quizArea" style="margin-top:20px;"></div>
+
+<div id="score"></div>
+
+<script>
+const VOCAB_DATA = [
+  ["爱", "ài", "to love"],
+  ["吃", "chī", "to eat"],
+  ["读", "dú", "to read"],
+  ["工作", "gōngzuò", "to work"],
+  ["喝", "hē", "to drink"],
+  ["回", "huí", "to return"],
+  ["叫", "jiào", "to call, to be called"],
+  ["开", "kāi", "to open"],
+  ["看", "kàn", "to look (at)"],
+  ["看见", "kànjiàn", "to see"],
+  ["来", "lái", "to come"],
+  ["没有", "méiyǒu", "to not have"],
+  ["买", "mǎi", "to buy"],
+  ["请", "qǐng", "please"],
+  ["去", "qù", "to go"],
+  ["认识", "rènshi", "to know"],
+  ["是", "shì", "to be"],
+  ["睡觉", "shuìjiào", "to sleep"],
+  ["说", "shuō", "to speak"],
+  ["听", "tīng", "to listen"],
+  ["下雨", "xiàyǔ", "to rain"],
+  ["写", "xiě", "to write"],
+  ["喜欢", "xǐhuān", "to like"],
+  ["学习", "xuéxí", "to study"],
+  ["有", "yǒu", "to have"],
+  ["再见", "zàijiàn", "goodbye"],
+  ["住", "zhù", "to live"],
+  ["做", "zuò", "to do"],
+  ["坐", "zuò", "to sit"],
+  ["帮助", "bāngzhù", "to help"],
+  ["唱歌", "chànggē", "to sing"],
+  ["出", "chū", "to go out"],
+  ["穿", "chuān", "to wear"],
+  ["到", "dào", "to arrive"],
+  ["等", "děng", "to wait"],
+  ["懂", "dǒng", "to understand"],
+  ["告诉", "gàosu", "to tell"],
+  ["给", "gěi", "to give"],
+  ["介绍", "jièshào", "to introduce"],
+  ["进", "jìn", "to enter"],
+  ["觉得", "juéde", "to think; to feel"],
+  ["开始", "kāishǐ", "to start"],
+  ["离", "lí", "to be distanced from"],
+  ["旅游", "lǚyóu", "to travel"],
+  ["卖", "mài", "to sell"],
+  ["跑步", "pǎobù", "to jog"],
+  ["起床", "qǐchuáng", "to get up"],
+  ["让", "ràng", "to let"],
+  ["上班", "shàngbān", "to go to work"],
+  ["生病", "shēngbìng", "to fall ill"],
+  ["说话", "shuōhuà", "to speak"],
+  ["送", "sòng", "to give"],
+  ["跳舞", "tiàowǔ", "to dance"],
+  ["完", "wán", "to finish"],
+  ["玩", "wán", "to play"],
+  ["问", "wèn", "to ask"],
+  ["笑", "xiào", "to laugh"],
+  ["姓", "xìng", "to be surnamed"],
+  ["休息", "xiūxi", "to rest"],
+  ["游泳", "yóuyǒng", "to swim"],
+  ["运动", "yùndòng", "to exercise"],
+  ["找", "zhǎo", "to look for"],
+  ["知道", "zhīdào", "to know"],
+  ["准备", "zhǔnbèi", "to prepare"],
+  ["走", "zǒu", "to walk"],
+  ["搬", "bān", "to move"],
+  ["帮忙", "bāngmáng", "to help"],
+  ["变化", "biànhuà", "to change"],
+  ["表示", "biǎoshì", "to indicate"],
+  ["表演", "biǎoyǎn", "to perform"],
+  ["参加", "cānjiā", "to participate"],
+  ["差", "chà", "to differ"],
+  ["迟到", "chídào", "to arrive late"],
+  ["出现", "chūxiàn", "to appear"],
+  ["带", "dài", "to carry"],
+  ["担心", "dānxīn", "to worry"],
+  ["打扫", "dǎsǎo", "to clean"],
+  ["打算", "dǎsuàn", "to plan"],
+  ["锻炼", "duànliàn", "to exercise"],
+  ["发", "fā", "to send"],
+  ["放", "fàng", "to put"],
+  ["放心", "fàngxīn", "to feel relieved and not worried; to have peace of mind; to be at ease without concerns"],
+  ["发烧", "fāshāo", "to have a fever"],
+  ["发现", "fāxiàn", "to discover"],
+  ["分", "fēn", "to divide"],
+  ["复习", "fùxí", "to review"],
+  ["敢", "gǎn", "to dare"],
+  ["感冒", "gǎnmào", "to catch cold"],
+  ["刮风", "guāfēng", "to be windy"],
+  ["关", "guān", "to close"],
+  ["关心", "guānxīn", "to care about"],
+  ["过", "guò", "to pass"],
+  ["害怕", "hàipà", "to be afraid"],
+  ["花", "huā", "to spend"],
+  ["画", "huà", "to draw"],
+  ["还", "huán", "to return"],
+  ["换", "huàn", "to change"],
+  ["欢迎", "huānyíng", "to welcome"],
+  ["回答", "huídá", "to answer"],
+  ["检查", "jiǎnchá", "to check"],
+  ["讲", "jiǎng", "to speak"],
+  ["见面", "jiànmiàn", "to meet"],
+  ["教", "jiāo", "to teach"],
+  ["记得", "jìde", "to remember"],
+  ["接", "jiē", "to receive"],
+  ["借", "jiè", "to borrow"],
+  ["结婚", "jiéhūn", "to marry"],
+  ["解决", "jiějué", "to solve"],
+  ["结束", "jiéshù", "to finish"],
+  ["经过", "jīngguò", "to pass by"],
+  ["决定", "juédìng", "to decide"],
+  ["哭", "kū", "to cry"],
+  ["练习", "liànxí", "to practice"],
+  ["离开", "líkāi", "to leave"],
+  ["了解", "liǎojiě", "to understand"],
+  ["聊天", "liáotiān", "to chat"],
+  ["留学", "liúxué", "to study abroad"],
+  ["满意", "mǎnyì", "to be satisfied"],
+  ["明白", "míngbai", "to understand"],
+  ["拿", "ná", "to take"],
+  ["爬山", "páshān", "to climb a mountain"],
+  ["骑", "qí", "to ride"],
+  ["起飞", "qǐfēi", "to take off"],
+  ["起来", "qǐlái", "to get up"],
+  ["请假", "qǐngjià", "to ask for leave"],
+  ["认为", "rènwéi", "to think"],
+  ["上网", "shàngwǎng", "to go online"],
+  ["生气", "shēngqì", "to get angry"],
+  ["使", "shǐ", "to make"],
+  ["试", "shì", "to try"],
+  ["刷牙", "shuāyá", "to brush teeth"],
+  ["疼", "téng", "to hurt"],
+  ["提高", "tígāo", "to improve"],
+  ["同意", "tóngyì", "to agree"],
+  ["完成", "wánchéng", "to complete"],
+  ["忘记", "wàngjì", "to forget"],
+  ["像", "xiàng", "to resemble"],
+  ["相信", "xiāngxìn", "to believe"],
+  ["洗澡", "xǐzǎo", "to bathe"],
+  ["选择", "xuǎnzé", "to choose"],
+  ["需要", "xūyào", "to need"],
+  ["要求", "yāoqiú", "to request"],
+  ["应该", "yīnggāi", "should"],
+  ["以为", "yǐwéi", "to think (mistakenly)"],
+  ["用", "yòng", "to use"],
+  ["愿意", "yuànyì", "to be willing"],
+  ["遇到", "yùdào", "to encounter"],
+  ["站", "zhàn", "to stand"],
+  ["长", "zhǎng", "to grow"],
+  ["照顾", "zhàogu", "to take care of"],
+  ["祝", "zhù", "to wish"],
+  ["注意", "zhùyì", "to pay attention"],
+];
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+const startBtn = document.getElementById("startBtn");
+const quizArea = document.getElementById("quizArea");
+const scoreDiv = document.getElementById("score");
+const numQInput = document.getElementById("numQ");
+const modeRadios = document.getElementsByName("mode");
+
+let currentQuestionIndex = 0;
+let questions = [];
+let correctCount = 0;
+let currentGroupStartIndex = 0;
+let questionsPerGroup = 5;
+
+function getSelectedMode() {
+  for (const radio of modeRadios) {
+    if (radio.checked) return radio.value;
+  }
+  return "meaning"; // default
+}
+
+function createQuestion(vocab, mode) {
+  const questionObj = {};
+
+  if (mode === "meaning") {
+    questionObj.questionText = `What is the meaning of the character "${vocab[0]}"?`;
+    questionObj.correctAnswer = vocab[2];
+    questionObj.options = [vocab[2]];
+    // Add 3 random wrong meanings
+    while (questionObj.options.length < 4) {
+      const rand = VOCAB_DATA[Math.floor(Math.random() * VOCAB_DATA.length)][2];
+      if (!questionObj.options.includes(rand)) questionObj.options.push(rand);
+    }
+  } else if (mode === "pinyin") {
+    questionObj.questionText = `What is the pinyin for the character "${vocab[0]}"?`;
+    questionObj.correctAnswer = vocab[1];
+    questionObj.options = [vocab[1]];
+    // Add 3 random wrong pinyins
+    while (questionObj.options.length < 4) {
+      const rand = VOCAB_DATA[Math.floor(Math.random() * VOCAB_DATA.length)][1];
+      if (!questionObj.options.includes(rand)) questionObj.options.push(rand);
+    }
+  }
+
+  shuffleArray(questionObj.options);
+  return questionObj;
+}
+
+function showQuestion() {
+  quizArea.innerHTML = "";
+  scoreDiv.textContent = "";
+
+  if (currentQuestionIndex >= questions.length) {
+    quizArea.innerHTML = `<p>Practice finished! Your score: ${correctCount} / ${questions.length}</p>`;
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next Group";
+    nextBtn.style.marginTop = "10px";
+
+    nextBtn.addEventListener("click", () => {
+      currentGroupStartIndex += questionsPerGroup;
+      if (currentGroupStartIndex >= VOCAB_DATA.length) {
+        currentGroupStartIndex = 0; // loop back to start
+      }
+      startPractice(currentGroupStartIndex, questionsPerGroup);
+    });
+
+    quizArea.appendChild(nextBtn);
+    startBtn.disabled = false;
+    return;
+  }
+
+  const q = questions[currentQuestionIndex];
+  const questionDiv = document.createElement("div");
+  questionDiv.className = "question";
+  questionDiv.innerHTML = `<p>${q.questionText}</p>`;
+
+  const choicesDiv = document.createElement("div");
+  choicesDiv.className = "choices";
+
+  q.options.forEach(option => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "choice";
+    input.value = option;
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(option));
+    choicesDiv.appendChild(label);
+  });
+
+  questionDiv.appendChild(choicesDiv);
+
+  const submitBtn = document.createElement("button");
+  submitBtn.textContent = "Submit Answer";
+  submitBtn.style.marginTop = "10px";
+  submitBtn.disabled = true;
+
+  choicesDiv.addEventListener("change", () => {
+    submitBtn.disabled = false;
+  });
+
+  submitBtn.addEventListener("click", () => {
+    const selected = document.querySelector('input[name="choice"]:checked');
+    if (!selected) return;
+
+    if (selected.value === q.correctAnswer) {
+      scoreDiv.innerHTML = `<span class="correct">Correct!</span>`;
+      correctCount++;
+    } else {
+      scoreDiv.innerHTML = `<span class="wrong">Wrong!</span> Correct answer: ${q.correctAnswer}`;
+    }
+    submitBtn.disabled = true;
+    currentQuestionIndex++;
+    setTimeout(showQuestion, 1500);
+  });
+
+  quizArea.appendChild(questionDiv);
+  quizArea.appendChild(submitBtn);
+}
+
+function startPractice(startIndex, count) {
+  questionsPerGroup = count;
+  const mode = getSelectedMode();
+  const maxCount = Math.min(count, VOCAB_DATA.length - startIndex);
+
+  questions = [];
+  for (let i = 0; i < maxCount; i++) {
+    questions.push(createQuestion(VOCAB_DATA[startIndex + i], mode));
+  }
+
+  currentQuestionIndex = 0;
+  correctCount = 0;
+  startBtn.disabled = true;
+  scoreDiv.textContent = "";
+  quizArea.innerHTML = "";
+  showQuestion();
+}
+
+startBtn.addEventListener("click", () => {
+  let numQ = parseInt(numQInput.value);
+  if (isNaN(numQ) || numQ < 1) numQ = 5;
+  if (numQ > VOCAB_DATA.length) numQ = VOCAB_DATA.length;
+
+  currentGroupStartIndex = 0;
+  startPractice(currentGroupStartIndex, numQ);
+});
+</script>
+
+</body>
+</html>
